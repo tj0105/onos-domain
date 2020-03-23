@@ -144,8 +144,8 @@ public class PofLinkDiscovery {
         OFMatch20 ofMatch20= new OFMatch20();
         ofMatch20.setFieldId((short) 1);
         ofMatch20.setFieldName("test");
-        ofMatch20.setOffset((short)0);
-        ofMatch20.setLength((short) 48);
+        ofMatch20.setOffset((short)208);
+        ofMatch20.setLength((short) 32);
 
         ArrayList<OFMatch20> match20List = new ArrayList<OFMatch20>();
         match20List.add(ofMatch20);

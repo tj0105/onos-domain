@@ -28,12 +28,7 @@ import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.apache.felix.scr.annotations.Service;
-import org.onlab.packet.Ethernet;
-import org.onlab.packet.ICMP6;
-import org.onlab.packet.IPv6;
-import org.onlab.packet.IpAddress;
-import org.onlab.packet.MacAddress;
-import org.onlab.packet.VlanId;
+import org.onlab.packet.*;
 import org.onlab.util.Tools;
 import org.onosproject.cfg.ComponentConfigService;
 import org.onosproject.core.ApplicationId;
@@ -45,6 +40,7 @@ import org.onosproject.incubator.net.neighbour.NeighbourMessageContext;
 import org.onosproject.incubator.net.neighbour.NeighbourMessageHandler;
 import org.onosproject.incubator.net.neighbour.NeighbourResolutionService;
 import org.onosproject.net.ConnectPoint;
+import org.onosproject.net.Host;
 import org.onosproject.net.edge.EdgePortService;
 import org.onosproject.net.flow.DefaultTrafficSelector;
 import org.onosproject.net.flow.TrafficSelector;
@@ -57,11 +53,7 @@ import org.osgi.service.component.ComponentContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.Dictionary;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -458,20 +450,32 @@ public class NeighbourResolutionManager implements NeighbourResolutionService {
                 return;
             }
 
-            if (ethPkt.getEtherType() == TYPE_ARP) {
+            if (ethPkt.getEtherType() != TYPE_ARP) {
                 // handle ARP packets
-                handlePacket(context);
-            } else if (ethPkt.getEtherType() == TYPE_IPV6) {
-                IPv6 ipv6 = (IPv6) ethPkt.getPayload();
-                if (ipv6.getNextHeader() == IPv6.PROTOCOL_ICMP6) {
-                    ICMP6 icmp6 = (ICMP6) ipv6.getPayload();
-                    if (icmp6.getIcmpType() == NEIGHBOR_SOLICITATION ||
-                            icmp6.getIcmpType() == NEIGHBOR_ADVERTISEMENT) {
-                        // handle ICMPv6 solicitations and advertisements (NDP)
-                        handlePacket(context);
-                    }
-                }
+                return ;
+
             }
+
+            ARP arp =(ARP) ethPkt.getPayload();
+//            log.info("============ARP==={}========",arp.toString());
+            IpAddress target=Ip4Address.valueOf(arp.getTargetProtocolAddress());
+            IpAddress sender=Ip4Address.valueOf(arp.getSenderProtocolAddress());
+            Set<Host> hosts= hostService.getHostsByIp(target);
+            if (null==hosts||hosts.isEmpty()){
+                return;
+            }
+            handlePacket(context);
+//          else if (ethPkt.getEtherType() == TYPE_IPV6) {
+//                IPv6 ipv6 = (IPv6) ethPkt.getPayload();
+//                if (ipv6.getNextHeader() == IPv6.PROTOCOL_ICMP6) {
+//                    ICMP6 icmp6 = (ICMP6) ipv6.getPayload();
+//                    if (icmp6.getIcmpType() == NEIGHBOR_SOLICITATION ||
+//                            icmp6.getIcmpType() == NEIGHBOR_ADVERTISEMENT) {
+//                        // handle ICMPv6 solicitations and advertisements (NDP)
+//                        handlePacket(context);
+//                    }
+//                }
+//            }
         }
     }
 }

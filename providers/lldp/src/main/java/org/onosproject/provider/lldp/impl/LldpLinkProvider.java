@@ -155,10 +155,11 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
             label = "If false, link discovery is disabled")
     private boolean enabled = false;
 
+    //close the bddp , bddp is the link discovery for the no sdn switch
     private static final String PROP_USE_BDDP = "useBDDP";
-    @Property(name = PROP_USE_BDDP, boolValue = true,
+    @Property(name = PROP_USE_BDDP, boolValue = false,
             label = "Use BDDP for link discovery")
-    private boolean useBddp = true;
+    private boolean useBddp = false;
 
     private static final String PROP_PROBE_RATE = "probeRate";
     private static final int DEFAULT_PROBE_RATE = 3000;
@@ -197,6 +198,9 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
 
     public static final String CONFIG_KEY = "suppression";
     public static final String FEATURE_NAME = "linkDiscovery";
+
+    //ldy add domainId field
+    private static final String domainId="1111";
 
     private final Set<ConfigFactory<?, ?>> factories = ImmutableSet.of(
             new ConfigFactory<ApplicationId, SuppressionConfig>(APP_SUBJECT_FACTORY,
@@ -429,7 +433,7 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
         }
 
         LinkDiscovery ld = discoverers.computeIfAbsent(device.id(),
-                                     did -> new LinkDiscovery(device, context));
+                                     did -> new LinkDiscovery(device, context,domainId));
         if (ld.isStopped()) {
             ld.start();
         }
@@ -661,8 +665,9 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
             if (ld == null) {
                 return;
             }
-
+//            log.info("================hello==============");
             if (ld.handleLldp(context)) {
+//                log.info("===============context===={}====",eth.getPayload());
                 context.block();
             }
         }

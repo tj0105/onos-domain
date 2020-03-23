@@ -21,6 +21,7 @@ import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 
 import org.onlab.packet.Ethernet;
+import org.onlab.packet.HCPLLDP;
 import org.onlab.packet.MacAddress;
 import org.onlab.packet.ONOSLLDP;
 import org.onlab.util.Timer;
@@ -70,6 +71,8 @@ public class LinkDiscovery implements TimerTask {
     // Set of ports to be probed
     private final Set<Long> ports = Sets.newConcurrentHashSet();
 
+    //ldy add DomainId feild
+    private String domainId;
     /**
      * Instantiates discovery manager for the given physical switch. Creates a
      * generic LLDP packet that will be customized for the port it is sent out on.
@@ -81,6 +84,27 @@ public class LinkDiscovery implements TimerTask {
     public LinkDiscovery(Device device, LinkDiscoveryContext context) {
         this.device = device;
         this.context = context;
+
+        ethPacket = new Ethernet();
+        ethPacket.setEtherType(Ethernet.TYPE_LLDP);
+        ethPacket.setDestinationMACAddress(MacAddress.ONOS_LLDP);
+        ethPacket.setPad(true);
+
+        bddpEth = new Ethernet();
+        bddpEth.setEtherType(Ethernet.TYPE_BSN);
+        bddpEth.setDestinationMACAddress(MacAddress.BROADCAST);
+        bddpEth.setPad(true);
+
+        isStopped = true;
+        start();
+        log.debug("Started discovery manager for switch {}", device.id());
+
+    }
+
+    public LinkDiscovery(Device device, LinkDiscoveryContext context,String domainId) {
+        this.device = device;
+        this.context = context;
+        this.domainId=domainId;
 
         ethPacket = new Ethernet();
         ethPacket.setEtherType(Ethernet.TYPE_LLDP);
@@ -157,6 +181,9 @@ public class LinkDiscovery implements TimerTask {
         }
 
         ONOSLLDP onoslldp = ONOSLLDP.parseONOSLLDP(eth);
+        HCPLLDP hcplldp=HCPLLDP.parseHCPLLDP(eth);
+//        if (hcplldp!=null)
+//            return true;
         if (onoslldp != null) {
             Type lt;
             if (notMy(eth.getSourceMAC().toString())) {
@@ -271,6 +298,17 @@ public class LinkDiscovery implements TimerTask {
         if (context.useBddp()) {
             OutboundPacket bpkt = createOutBoundBddp(portNumber);
             context.packetService().emit(bpkt);
+        }
+        if (null!=domainId) {
+            HCPLLDP hcplldp = HCPLLDP.hcplldp(Long.valueOf(device.id().toString().substring("pof:".length()),16),
+                    portNumber.intValue(),
+                    Long.valueOf(domainId),
+                    0xffff);
+            ethPacket.setSourceMACAddress(context.fingerprint()).setPayload(hcplldp);
+            OutboundPacket hcpLLDPPack = new DefaultOutboundPacket(device.id(),
+                    builder().setOutput(portNumber(portNumber)).build(),
+                    ByteBuffer.wrap(ethPacket.serialize()));
+            context.packetService().emit(hcpLLDPPack);
         }
     }
 

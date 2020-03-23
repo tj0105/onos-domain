@@ -78,9 +78,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.MoreExecutors;
 
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
+//import static org.easymock.EasyMock.createMock;
+//import static org.easymock.EasyMock.expect;
+//import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -131,10 +131,10 @@ public class LldpLinkProviderTest {
         deviceBlacklist = new HashSet<>();
         portBlacklist = new HashSet<>();
         cfg = new TestSuppressionConfig();
-        coreService = createMock(CoreService.class);
-        expect(coreService.registerApplication(appId.name()))
-                .andReturn(appId).anyTimes();
-        replay(coreService);
+//        coreService = createMock(CoreService.class);
+//        expect(coreService.registerApplication(appId.name()))
+//                .andReturn(appId).anyTimes();
+//        replay(coreService);
 
         provider.cfgService = new ComponentConfigAdapter();
         provider.coreService = coreService;
@@ -451,6 +451,7 @@ public class LldpLinkProviderTest {
         PacketContext pktCtx = new TestPacketContext(device(DID3));
 
         testProcessor.process(pktCtx);
+        System.out.println(pktCtx.isHandled());
         assertFalse("Context should still be free", pktCtx.isHandled());
     }
 
